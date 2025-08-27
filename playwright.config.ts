@@ -1,13 +1,41 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
+import * as dotenv from 'dotenv';
+
+// ✅ Load .env
+dotenv.config();
+
+// ✅ Fallback values if not set
+const S2_BASE_URL   = process.env.S2_BASE_URL   ?? 'https://s2.cengagelearning.com.au';
+const PROD_BASE_URL = process.env.PROD_BASE_URL ?? 'https://www.cengage.com.au';
 
 export default defineConfig({
-  reporter: [['html', { outputFolder: 'playwright-report', open: 'never' }]],
-  use: {
-    screenshot: 'only-on-failure',
-    //timeout: 60000, // Set global timeout for all tests
+  testDir: './tests',
+  retries: 1,
+  timeout: 60_000,
+  expect: {
+    timeout: 10_000,
   },
-  fullyParallel: true,
-  workers: 2, // Number of parallel workers (adjust based on your environment)
-  retries: 2, // Retry failed tests up to 2 times
-  timeout: 60000, // Ensure global timeout is applied here as well for the entire suite
+  use: {
+    headless: true,
+    viewport: { width: 1280, height: 800 },
+    trace: 'retain-on-failure',
+    video: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+  },
+  projects: [
+    {
+      name: 'S2',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: S2_BASE_URL,
+      },
+    },
+    {
+      name: 'PROD',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: PROD_BASE_URL,
+      },
+    },
+  ],
 });
