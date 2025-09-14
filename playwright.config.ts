@@ -15,6 +15,11 @@ export default defineConfig({
   expect: {
     timeout: 10_000,
   },
+  reporter: [
+    ['list'],
+    ['junit', { outputFile: 'reports/junit.xml' }],
+    ['html',  { outputFolder: 'playwright-report', open: 'never' }],
+  ],
   use: {
     headless: true,
     viewport: { width: 1280, height: 800 },

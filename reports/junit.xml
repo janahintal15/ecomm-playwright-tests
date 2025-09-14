@@ -1,0 +1,6 @@
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="60.616038999999994">
+<testsuite name="login3.spec.ts" timestamp="2025-09-14T18:02:37.205Z" hostname="S2" tests="1" failures="0" skipped="0" time="48.297" errors="0">
+<testcase name="ECOMM Login Flow › can login successfully" classname="login3.spec.ts" time="48.297">
+</testcase>
+</testsuite>
+</testsuites>
