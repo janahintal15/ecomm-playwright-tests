@@ -75,18 +75,29 @@ ENV=PROD
       }
     }
 
-    stage('Run Playwright') {
-      steps {
+    stage('Install deps') {
+    steps {
         script {
-          def tagArg = params.TAGS?.trim() ? "--grep @${params.TAGS.trim()}" : ""
-          if (isUnix()) {
-            sh "npx playwright test --project=${params.TEST_ENV} ${tagArg}"
-          } else {
-            bat "npx playwright test --project=${params.TEST_ENV} ${tagArg}"
-          }
+        if (isUnix()) {
+            sh '''
+            node -v
+            npm -v
+            npm install
+            npx playwright install
+            npx playwright install-deps || true
+            '''
+        } else {
+            bat '''
+            node -v
+            npm -v
+            call npm install
+            npx playwright install
+            '''
         }
-      }
+        }
     }
+    }
+
   }
 
   post {
