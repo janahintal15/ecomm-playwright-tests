@@ -1,7 +1,7 @@
 pipeline {
   agent any
 
-  tools { nodejs 'node20' }
+  tools { nodejs 'node20' }  // Must match your NodeJS name in Jenkins Global Tools
 
   options {
     timestamps()
@@ -31,17 +31,28 @@ pipeline {
             sh '''
               node -v
               npm -v
-              npm install
+              npm install --legacy-peer-deps
               npx playwright install
-              npx playwright install-deps || true
             '''
           } else {
             bat '''
               node -v
               npm -v
-              call npm install
+              call npm install --legacy-peer-deps
               npx playwright install
             '''
+          }
+        }
+      }
+    }
+
+    stage('Verify install') {
+      steps {
+        script {
+          if (isUnix()) {
+            sh 'ls -la node_modules/@playwright/test || echo "Playwright not found"'
+          } else {
+            bat 'dir node_modules\\@playwright\\test || echo Playwright not found'
           }
         }
       }
