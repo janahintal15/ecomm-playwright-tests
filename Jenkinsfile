@@ -1,8 +1,7 @@
 pipeline {
   agent any
 
-  // Use the NodeJS tool you configured in "Global Tool Configuration"
-  tools { nodejs 'node20' }  // <-- change if you named it differently
+  tools { nodejs 'node20' }
 
   options {
     timestamps()
@@ -32,16 +31,15 @@ pipeline {
             sh '''
               node -v
               npm -v
-              npm ci
+              npm install
               npx playwright install
-              # Extra libs on Linux if needed; ignore if not supported
               npx playwright install-deps || true
             '''
           } else {
             bat '''
               node -v
               npm -v
-              call npm ci
+              call npm install
               npx playwright install
             '''
           }
@@ -75,29 +73,18 @@ ENV=PROD
       }
     }
 
-    stage('Install deps') {
-    steps {
+    stage('Run Playwright') {
+      steps {
         script {
-        if (isUnix()) {
-            sh '''
-            node -v
-            npm -v
-            npm install
-            npx playwright install
-            npx playwright install-deps || true
-            '''
-        } else {
-            bat '''
-            node -v
-            npm -v
-            call npm install
-            npx playwright install
-            '''
+          def tagArg = params.TAGS?.trim() ? "--grep @${params.TAGS.trim()}" : ""
+          if (isUnix()) {
+            sh "npx playwright test --project=${params.TEST_ENV} ${tagArg}"
+          } else {
+            bat "npx playwright test --project=${params.TEST_ENV} ${tagArg}"
+          }
         }
-        }
+      }
     }
-    }
-
   }
 
   post {
