@@ -20,8 +20,19 @@ pipeline {
   }
 
   stages {
-    stage('Checkout') {
-      steps { checkout scm }
+    steps {
+        // Explicitly checkout with changelog generation disabled
+        checkout([
+        $class: 'GitSCM',
+        branches: [[name: '*/main']],
+        doGenerateSubmoduleConfigurations: false,
+        extensions: [[$class: 'WipeWorkspace']], // Good practice to start with a clean workspace
+        submoduleCfg: [],
+        userRemoteConfigs: [[
+            url: 'https://github.com/janahintal15/ecomm-playwright-tests.git'
+        ]],
+        changelog: false // The key change
+        ])
     }
 
     stage('Install deps') {
