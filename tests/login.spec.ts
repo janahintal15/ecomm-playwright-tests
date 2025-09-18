@@ -48,5 +48,13 @@ test.describe('ECOMM Login Flow', () => {
     await page.waitForURL(/\/(dashboard|subscriptions)$/i);
     await loginPage.assertLoginSuccess();
   });
+
+    test('failing login', async ({ page }) => {
+    await loginPage.acceptCookies();
+    await page.getByText('Log in').click();
+    await loginPage.login('test@gg.com', password);
+    await page.waitForURL(/\/(dashboard|subscriptions)$/i);
+    await loginPage.assertLoginSuccess();
+  });
 });
 
