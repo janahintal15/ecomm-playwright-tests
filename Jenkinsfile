@@ -35,7 +35,9 @@ pipeline {
         ])
       }
     }
-
+    stage('Install Dependencies') {
+            steps { bat 'npm ci' }
+        }
     stage('Install deps') {
       steps {
         script {
@@ -44,14 +46,14 @@ pipeline {
               node -v
               npm -v
               npm install --legacy-peer-deps
-              npx playwright install
+              npx playwright install --with-deps
             '''
           } else {
             bat '''
               node -v
               npm -v
               call npm install --legacy-peer-deps
-              npx playwright install
+              npx playwright install --with-deps
             '''
           }
         }
