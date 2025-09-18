@@ -3,6 +3,11 @@ pipeline {
 
   tools { nodejs 'node20' }
 
+  // Run every day 06:00 Sydney time
+  triggers {
+    cron('TZ=Australia/Sydney\n0 6 * * *')
+  }
+
   options {
     timestamps()
     buildDiscarder(logRotator(numToKeepStr: '20'))
@@ -17,6 +22,7 @@ pipeline {
   environment {
     JUNIT_FILE = 'reports/junit.xml'
     HTML_DIR   = 'playwright-report'
+    // Cache Playwright browsers on the Windows controller/agent
     PLAYWRIGHT_BROWSERS_PATH = 'D:\\Jenkins\\playwright-browsers'
   }
 
@@ -26,12 +32,8 @@ pipeline {
         checkout([
           $class: 'GitSCM',
           branches: [[name: '*/main']],
-          doGenerateSubmoduleConfigurations: false,
           extensions: [[$class: 'WipeWorkspace']],
-          submoduleCfg: [],
-          userRemoteConfigs: [[
-            url: 'https://github.com/janahintal15/ecomm-playwright-tests.git'
-          ]],
+          userRemoteConfigs: [[url: 'https://github.com/janahintal15/ecomm-playwright-tests.git']],
           changelog: false
         ])
       }
@@ -43,25 +45,23 @@ pipeline {
       }
     }
 
-    stage('Install deps') {
+    stage('Install Playwright Browsers') {
       steps {
         script {
           if (isUnix()) {
             sh '''
               node -v
               npm -v
-              npm ci
-              npx playwright install
+              npx playwright install --with-deps
             '''
           } else {
-            bat '''
+            bat """
               node -v
               npm -v
-              if not exist D:\\Jenkins\\playwright-browsers mkdir D:\\Jenkins\\playwright-browsers
-              set PLAYWRIGHT_BROWSERS_PATH=D:\\Jenkins\\playwright-browsers
-              call npm ci
+              if not exist "${env.PLAYWRIGHT_BROWSERS_PATH}" mkdir "${env.PLAYWRIGHT_BROWSERS_PATH}"
+              set PLAYWRIGHT_BROWSERS_PATH=${env.PLAYWRIGHT_BROWSERS_PATH}
               npx playwright install --force chromium
-            '''
+            """
           }
         }
       }
@@ -110,15 +110,14 @@ ENV=PROD
         script {
           def tagArg = params.TAGS?.trim() ? "--grep @${params.TAGS.trim()}" : ""
 
-          // ✅ Capture exit code so failures don't stop pipeline
+          // Capture exit code so failures don't stop pipeline
           int exitCode
           if (isUnix()) {
             exitCode = sh(returnStatus: true, script: "npx playwright test --project=${params.TEST_ENV} ${tagArg}")
           } else {
             exitCode = bat(returnStatus: true, script: "npx playwright test --project=${params.TEST_ENV} ${tagArg}")
           }
-          echo "Playwright exited with code ${exitCode} — continuing pipeline regardless of failures."
-          // Do not fail build here, let junit mark build UNSTABLE based on test results
+          echo "Playwright exited with code ${exitCode} — continuing to publish reports."
         }
       }
     }
@@ -126,8 +125,10 @@ ENV=PROD
 
   post {
     always {
+      // Publish JUnit (will mark build UNSTABLE if tests failed)
       junit allowEmptyResults: true, testResults: "${JUNIT_FILE}"
 
+      // Publish Playwright HTML report as a side panel link
       publishHTML(target: [
         reportDir: "${HTML_DIR}",
         reportFiles: 'index.html',
@@ -137,7 +138,55 @@ ENV=PROD
         reportName: 'Playwright HTML Report'
       ])
 
-      archiveArtifacts artifacts: "${HTML_DIR}/**/*, ${JUNIT_FILE}", allowEmptyArchive: true
+      // Keep artifacts (HTML, JUnit, raw test-results incl. traces/screens/videos)
+      archiveArtifacts artifacts: "test-results/**/*, ${HTML_DIR}/**/*, ${JUNIT_FILE}", allowEmptyArchive: true
+    }
+
+    success {
+      emailext(
+        to: 'janah.intal@ibc.com.au, Will.Castley@cengage.com',
+        subject: "ECOMM Playwright – SUCCESS #${env.BUILD_NUMBER}",
+        mimeType: 'text/html',
+        body: """
+          <p><b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> completed successfully.</p>
+          <p>Build: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+          <p>Open <b>Playwright HTML Report</b> on the build page for details.</p>
+        """
+      )
+    }
+
+    unstable {
+      emailext(
+        to: 'janah.intal@ibc.com.au, Will.Castley@cengage.com',
+        subject: "ECOMM Playwright – UNSTABLE #${env.BUILD_NUMBER}",
+        mimeType: 'text/html',
+        attachmentsPattern: "${JUNIT_FILE}",
+        body: """
+          <p><b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> is UNSTABLE (some tests failed).</p>
+          <p>Build: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+          <ul>
+            <li>JUnit XML attached</li>
+            <li>Click <b>Playwright HTML Report</b> on the build page for screenshots/videos/traces</li>
+          </ul>
+        """
+      )
+    }
+
+    failure {
+      emailext(
+        to: 'janah.intal@ibc.com.au, Will.Castley@cengage.com',
+        subject: "ECOMM Playwright – FAILED #${env.BUILD_NUMBER}",
+        mimeType: 'text/html',
+        attachmentsPattern: "${JUNIT_FILE}",
+        body: """
+          <p><b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> FAILED.</p>
+          <p>Build: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+          <ul>
+            <li>JUnit XML attached</li>
+            <li>Open <b>Playwright HTML Report</b> on the build page for details</li>
+          </ul>
+        """
+      )
     }
   }
 }
