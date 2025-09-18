@@ -17,6 +17,7 @@ pipeline {
   environment {
     JUNIT_FILE = 'reports/junit.xml'
     HTML_DIR   = 'playwright-report'
+    PLAYWRIGHT_BROWSERS_PATH = 'D:\\Jenkins\\playwright-browsers'
   }
 
   stages {
@@ -54,6 +55,9 @@ pipeline {
               npm -v
               call npm install --legacy-peer-deps
               npx playwright install --with-deps
+              set PLAYWRIGHT_BROWSERS_PATH=D:\\Jenkins\\playwright-browsers
+            if not exist D:\\Jenkins\\playwright-browsers mkdir D:\\Jenkins\\playwright-browsers
+            npx playwright install --force chromium
             '''
           }
         }
@@ -112,7 +116,7 @@ ENV=PROD
     }
   }
 
-  post {
+ post {
     always {
       junit allowEmptyResults: true, testResults: "${JUNIT_FILE}"
 
@@ -127,5 +131,5 @@ ENV=PROD
 
       archiveArtifacts artifacts: "${HTML_DIR}/**/*, ${JUNIT_FILE}", allowEmptyArchive: true
     }
-  }
+  } 
 }

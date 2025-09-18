@@ -2,7 +2,9 @@
   "name": "automation",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "postinstall": "playwright install chromium"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
