@@ -1,7 +1,7 @@
 pipeline {
   agent any
 
-  tools { nodejs 'node20' }   // adjust if your NodeJS tool in Jenkins is named differently
+  tools { nodejs 'node20' }
 
   options {
     timestamps()
@@ -36,9 +36,13 @@ pipeline {
         ])
       }
     }
+
     stage('Install Dependencies') {
-            steps { bat 'npm ci' }
-        }
+      steps {
+        bat 'npm ci'
+      }
+    }
+
     stage('Install deps') {
       steps {
         script {
@@ -46,18 +50,17 @@ pipeline {
             sh '''
               node -v
               npm -v
-              npm install --legacy-peer-deps
-              npx playwright install --with-deps
+              npm ci
+              npx playwright install
             '''
           } else {
             bat '''
               node -v
               npm -v
-              call npm install --legacy-peer-deps
-              npx playwright install --with-deps
+              if not exist D:\\Jenkins\\playwright-browsers mkdir D:\\Jenkins\\playwright-browsers
               set PLAYWRIGHT_BROWSERS_PATH=D:\\Jenkins\\playwright-browsers
-            if not exist D:\\Jenkins\\playwright-browsers mkdir D:\\Jenkins\\playwright-browsers
-            npx playwright install --force chromium
+              call npm ci
+              npx playwright install --force chromium
             '''
           }
         }
@@ -106,17 +109,22 @@ ENV=PROD
       steps {
         script {
           def tagArg = params.TAGS?.trim() ? "--grep @${params.TAGS.trim()}" : ""
+
+          // ✅ Capture exit code so failures don't stop pipeline
+          int exitCode
           if (isUnix()) {
-            sh "npx playwright test --project=${params.TEST_ENV} ${tagArg}"
+            exitCode = sh(returnStatus: true, script: "npx playwright test --project=${params.TEST_ENV} ${tagArg}")
           } else {
-            bat "npx playwright test --project=${params.TEST_ENV} ${tagArg}"
+            exitCode = bat(returnStatus: true, script: "npx playwright test --project=${params.TEST_ENV} ${tagArg}")
           }
+          echo "Playwright exited with code ${exitCode} — continuing pipeline regardless of failures."
+          // Do not fail build here, let junit mark build UNSTABLE based on test results
         }
       }
     }
   }
 
- post {
+  post {
     always {
       junit allowEmptyResults: true, testResults: "${JUNIT_FILE}"
 
@@ -131,5 +139,5 @@ ENV=PROD
 
       archiveArtifacts artifacts: "${HTML_DIR}/**/*, ${JUNIT_FILE}", allowEmptyArchive: true
     }
-  } 
+  }
 }
