@@ -17,8 +17,8 @@ export default defineConfig({
   },
   reporter: [
     ['list'],
-    ['junit', { outputFile: 'reports/junit.xml' }],
-    ['html',  { outputFolder: 'playwright-report', open: 'never' }],
+    ['junit', { outputFile: `reports/junit-${ENV}.xml` }],
+    ['html',  { outputFolder: `playwright-report-${ENV}`, open: 'never' }],
   ],
   use: {
     headless: true,
