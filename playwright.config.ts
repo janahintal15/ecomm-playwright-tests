@@ -16,9 +16,9 @@ export default defineConfig({
     timeout: 10_000,
   },
   reporter: [
-    ['list'],
-    ['junit', { outputFile: `reports/junit-${ENV}.xml` }],
-    ['html',  { outputFolder: `playwright-report-${ENV}`, open: 'never' }],
+    ['list'],                                  // console
+    ['junit', { outputFile: 'reports/junit.xml' }], // for Jenkins JUnit plugin
+    ['html',  { outputFolder: 'playwright-report', open: 'never' }], // optional UI
   ],
   use: {
     headless: true,
