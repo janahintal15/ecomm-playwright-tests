@@ -6,6 +6,7 @@ pipeline {
   // Run every day 06:00 Sydney time
   triggers {
     cron('TZ=Australia/Sydney\n0 6 * * *')
+    cron('TZ=Australia/Sydney\n0 13 * * *')
   }
 
   options {
