@@ -22,8 +22,8 @@ pipeline {
   environment {
     JUNIT_FILE = 'reports/junit.xml'
     HTML_DIR   = 'playwright-report'
-    // Cache Playwright browsers on the Windows controller/agent
     PLAYWRIGHT_BROWSERS_PATH = 'D:\\Jenkins\\playwright-browsers'
+    RECIPIENTS = 'janah.intal@ibc.com.au, Will.Castley@cengage.com'
   }
 
   stages {
@@ -108,9 +108,7 @@ ENV=PROD
     stage('Run Playwright') {
       steps {
         script {
-          def tagArg = params.TAGS?.trim() ? "--grep @${params.TAGS.trim()}" : ""
-
-          // Capture exit code so failures don't stop pipeline
+          def tagArg = params.TAGS?.trim() ? "--grep @${params.TAGS.trim()}" : ''
           int exitCode
           if (isUnix()) {
             exitCode = sh(returnStatus: true, script: "npx playwright test --project=${params.TEST_ENV} ${tagArg}")
@@ -125,10 +123,8 @@ ENV=PROD
 
   post {
     always {
-      // Publish JUnit (will mark build UNSTABLE if tests failed)
       junit allowEmptyResults: true, testResults: "${JUNIT_FILE}"
 
-      // Publish Playwright HTML report as a side panel link
       publishHTML(target: [
         reportDir: "${HTML_DIR}",
         reportFiles: 'index.html',
@@ -138,55 +134,66 @@ ENV=PROD
         reportName: 'Playwright HTML Report'
       ])
 
-      // Keep artifacts (HTML, JUnit, raw test-results incl. traces/screens/videos)
       archiveArtifacts artifacts: "test-results/**/*, ${HTML_DIR}/**/*, ${JUNIT_FILE}", allowEmptyArchive: true
     }
 
     success {
-      emailext(
-        to: 'janah.intal@ibc.com.au', 'Will.Castley@cengage.com',
-        subject: "ECOMM Playwright  SUCCESS #${env.BUILD_NUMBER}",
-        mimeType: 'text/html',
-        body: """
-          <p><b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> completed successfully.</p>
-          <p>Build: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-          <p>Open <b>Playwright HTML Report</b> on the build page for details.</p>
-        """
-      )
+      script {
+        if (params.TEST_ENV == 'PROD') {
+          emailext(
+            to: "${env.RECIPIENTS}",
+            subject: "ECOMM Playwright SUCCESS #${env.BUILD_NUMBER}",
+            mimeType: 'text/html',
+            body: """
+              <p><b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> completed successfully.</p>
+              <p>Build: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+              <p>Open <b>Playwright HTML Report</b> on the build page for details.</p>
+            """
+          )
+        }
+      }
     }
 
     unstable {
-      emailext(
-        to: 'janah.intal@ibc.com.au', 'Will.Castley@cengage.com',
-        subject: "ECOMM Playwright  UNSTABLE #${env.BUILD_NUMBER}",
-        mimeType: 'text/html',
-        attachmentsPattern: "${JUNIT_FILE}",
-        body: """
-          <p><b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> is UNSTABLE (some tests failed).</p>
-          <p>Build: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-          <ul>
-            <li>JUnit XML attached</li>
-            <li>Click <b>Playwright HTML Report</b> on the build page for screenshots/videos/traces</li>
-          </ul>
-        """
-      )
+      script {
+        if (params.TEST_ENV == 'PROD') {
+          emailext(
+            to: "${env.RECIPIENTS}",
+            subject: "ECOMM Playwright UNSTABLE #${env.BUILD_NUMBER}",
+            mimeType: 'text/html',
+            attachmentsPattern: "${JUNIT_FILE}",
+            body: """
+              <p><b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> is UNSTABLE (some tests failed).</p>
+              <p>Build: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+              <ul>
+                <li>JUnit XML attached</li>
+                <li>Click <b>Playwright HTML Report</b> on the build page for screenshots/videos/traces</li>
+              </ul>
+            """
+          )
+        }
+      }
     }
 
     failure {
-      emailext(
-        to: 'janah.intal@ibc.com.au', 'Will.Castley@cengage.com',
-        subject: "ECOMM Playwright  FAILED #${env.BUILD_NUMBER}",
-        mimeType: 'text/html',
-        attachmentsPattern: "${JUNIT_FILE}",
-        body: """
-          <p><b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> FAILED.</p>
-          <p>Build: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-          <ul>
-            <li>JUnit XML attached</li>
-            <li>Open <b>Playwright HTML Report</b> on the build page for details</li>
-          </ul>
-        """
-      )
+      script {
+        if (params.TEST_ENV == 'PROD') {
+          emailext(
+            to: "${env.RECIPIENTS}",
+            subject: "ECOMM Playwright FAILED #${env.BUILD_NUMBER}",
+            mimeType: 'text/html',
+            attachmentsPattern: "${JUNIT_FILE}",
+            body: """
+              <p><b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> FAILED.</p>
+              <p>Build: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+              <ul>
+                <li>JUnit XML attached</li>
+                <li>Open <b>Playwright HTML Report</b> on the build page for details</li>
+              </ul>
+            """
+          )
+        }
+      }
     }
   }
 }
