@@ -144,7 +144,7 @@ ENV=PROD
 
     success {
       emailext(
-        to: 'janah.intal@ibc.com.au',
+        to: 'janah.intal@ibc.com.au', 'Will.Castley@cengage.com',
         subject: "ECOMM Playwright  SUCCESS #${env.BUILD_NUMBER}",
         mimeType: 'text/html',
         body: """
@@ -157,7 +157,7 @@ ENV=PROD
 
     unstable {
       emailext(
-        to: 'janah.intal@ibc.com.au',
+        to: 'janah.intal@ibc.com.au', 'Will.Castley@cengage.com',
         subject: "ECOMM Playwright  UNSTABLE #${env.BUILD_NUMBER}",
         mimeType: 'text/html',
         attachmentsPattern: "${JUNIT_FILE}",
@@ -174,7 +174,7 @@ ENV=PROD
 
     failure {
       emailext(
-        to: 'janah.intal@ibc.com.au',
+        to: 'janah.intal@ibc.com.au', 'Will.Castley@cengage.com',
         subject: "ECOMM Playwright  FAILED #${env.BUILD_NUMBER}",
         mimeType: 'text/html',
         attachmentsPattern: "${JUNIT_FILE}",
