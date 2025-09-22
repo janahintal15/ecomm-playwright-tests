@@ -5,7 +5,10 @@ pipeline {
 
   // Run every day 06:00 Sydney time
   triggers {
-    cron('TZ=Australia/Sydney\n0 6 * * *')
+    parameterizedCron('''
+    TZ=Australia/Sydney
+    0 6 * * * %TEST_ENV=PROD
+    ''')
   }
 
   options {
