@@ -129,7 +129,7 @@ ENV=PROD
       junit allowEmptyResults: true, testResults: "${JUNIT_FILE}"
 
       publishHTML(target: [
-        reportDir: "${HTML_DIR}/html-report",
+        reportDir: "${HTML_DIR}",
         reportFiles: 'index.html',
         allowMissing: true,
         alwaysLinkToLastBuild: true,
