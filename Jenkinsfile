@@ -108,20 +108,21 @@ ENV=PROD
       }
     }
 
-    stage('Run Playwright') {
-      steps {
-        script {
-          def tagArg = params.TAGS?.trim() ? "--grep @${params.TAGS.trim()}" : ''
-          int exitCode
-          if (isUnix()) {
-            exitCode = sh(returnStatus: true, script: "npx playwright test --project=${params.TEST_ENV} ${tagArg}")
-          } else {
-            exitCode = bat(returnStatus: true, script: "npx playwright test --project=${params.TEST_ENV} ${tagArg}")
-          }
-          echo "Playwright exited with code ${exitCode} — continuing to publish reports."
-        }
+stage('Run Playwright') {
+  steps {
+    script {
+      def tagArg = params.TAGS?.trim() ? "--grep @${params.TAGS.trim()}" : ''
+      int exitCode
+      if (isUnix()) {
+        exitCode = sh(returnStatus: true, script: "npx playwright test --project=${params.TEST_ENV} ${tagArg} --reporter=list,junit,html")
+      } else {
+        exitCode = bat(returnStatus: true, script: "npx playwright test --project=${params.TEST_ENV} ${tagArg} --reporter=list,junit,html")
       }
+      echo "Playwright exited with code ${exitCode} — continuing to publish reports."
     }
+  }
+}
+
   }
 
   post {
