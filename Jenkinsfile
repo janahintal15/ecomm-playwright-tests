@@ -132,7 +132,7 @@ ENV=PROD
         reportDir: "${HTML_DIR}",
         reportFiles: 'index.html',
         allowMissing: true,
-        alwaysLinkToLastBuild: true,
+        alwaysLinkToLastBuild: false,
         keepAll: true,
         reportName: 'Playwright HTML Report'
       ])
