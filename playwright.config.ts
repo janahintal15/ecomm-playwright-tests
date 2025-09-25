@@ -17,8 +17,9 @@ export default defineConfig({
   },
   reporter: [
     ['list'],                                  // console
+    ['html', { open: 'never', outputFolder: 'playwright-report' }],
     ['junit', { outputFile: 'reports/junit.xml' }], // for Jenkins JUnit plugin
-    ['html',  { outputFolder: 'playwright-report', open: 'never' }], // optional UI
+    
   ],
   use: {
     headless: true,
