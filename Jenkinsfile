@@ -122,6 +122,21 @@ ENV=PROD
         }
       }
     }
+
+    //  New stage to debug reports
+    stage('Check Reports') {
+      steps {
+        script {
+          if (isUnix()) {
+            sh 'ls -R reports || true'
+            sh 'ls -R playwright-report || true'
+          } else {
+            bat 'dir reports /s'
+            bat 'dir playwright-report /s'
+          }
+        }
+      }
+    }
   }
 
   post {
