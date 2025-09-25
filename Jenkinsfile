@@ -108,20 +108,28 @@ ENV=PROD
       }
     }
 
-    stage('Run Playwright') {
-      steps {
-        script {
-          def tagArg = params.TAGS?.trim() ? "--grep @${params.TAGS.trim()}" : ''
-          int exitCode
-          if (isUnix()) {
-            exitCode = sh(returnStatus: true, script: "npx playwright test --project=${params.TEST_ENV} ${tagArg}")
-          } else {
-            exitCode = bat(returnStatus: true, script: "npx playwright test --project=${params.TEST_ENV} ${tagArg}")
-          }
-          echo "Playwright exited with code ${exitCode} — continuing to publish reports."
-        }
+stage('Run Playwright') {
+  steps {
+    script {
+      def tagArg = params.TAGS?.trim() ? "--grep @${params.TAGS.trim()}" : ''
+      int exitCode
+      if (isUnix()) {
+        exitCode = sh(returnStatus: true, script: "npx playwright test --project=${params.TEST_ENV} ${tagArg} --reporter=html --output=${HTML_DIR}")
+      } else {
+        exitCode = bat(returnStatus: true, script: "npx playwright test --project=${params.TEST_ENV} ${tagArg} --reporter=html --output=${HTML_DIR}")
+      }
+      echo "Playwright exited with code ${exitCode} — continuing to publish reports."
+
+      // Generate static HTML (required for Jenkins to serve it)
+      if (isUnix()) {
+        sh "npx playwright show-report ${HTML_DIR}"
+      } else {
+        bat "npx playwright show-report ${HTML_DIR} --no-open"
       }
     }
+  }
+}
+
   }
 
   post {
