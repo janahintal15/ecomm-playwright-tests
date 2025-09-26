@@ -49,12 +49,12 @@ test.describe('ECOMM Login Flow', () => {
     await loginPage.assertLoginSuccess();
   });
 
-    test('failing login', async ({ page }) => {
+  test('invalid login', async ({ page }) => {
     await loginPage.acceptCookies();
     await page.getByText('Log in').click();
-    await loginPage.login('test@gg.com', password);
-    await page.waitForURL(/\/(dashboard|subscriptions)$/i);
-    await loginPage.assertLoginSuccess();
+    await loginPage.login('invalid@test.com', password);
+    await page.getByText('This page requires frames in').contentFrame().getByRole('button', { name: 'Log in' }).click();
+    await expect(page.locator('#ErrorWarningMessage')).toBeVisible;
   });
 });
 

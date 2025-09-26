@@ -7,7 +7,7 @@ test.describe('ECOMM Tests', () => {
     await page.goto(url);
   });
 
-  test('has title', async ({ page }) => {
+  test('page has title', async ({ page }) => {
     await expect(page).toHaveTitle(/Cengage | Publisher for the school and higher education markets for Australia and New Zealand \| Cengage Australia/);
   });
   test('can accept cookies', async ({ page }) => {
