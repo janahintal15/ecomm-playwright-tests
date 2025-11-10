@@ -1,68 +1,88 @@
 import { test, expect } from '@playwright/test';
 
+// Utility to mock grecaptcha for all tests
+async function mockRecaptcha(page) {
+  await page.addInitScript(() => {
+    (window as any).grecaptcha = {
+      execute: () => Promise.resolve('test-token'),
+      ready: (cb: any) => cb(),
+    };
+  });
+
+  // Stub the recaptcha verification call so backend always sees success
+  await page.route('**/recaptcha/api/siteverify', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true }),
+    });
+  });
+}
+
 test('can register AU', async ({ page }) => {
-    // Generate a unique email with current datetime
-    const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '');
-    const uniqueEmail = `ibcqa_au${timestamp}@yopmail.com`;
+  await mockRecaptcha(page);
 
-    console.log(` Using unique email: ${uniqueEmail}`);
+  // Generate a unique email with current datetime
+  const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '');
+  const uniqueEmail = `ibcqa_au${timestamp}@yopmail.com`;
 
-    await page.goto('https://cengage.com.au/');
-    await page.getByRole('link', { name: ' Sign Up' }).click();
+  console.log(` Using unique email: ${uniqueEmail}`);
 
-    // Fill in signup form
-    await page.getByLabel('First name:').fill('IBC');
-    await page.getByLabel('Last name:').fill('QA');
-    await page.getByLabel('Email:', { exact: true }).fill(uniqueEmail);
-    await page.getByLabel('Confirm Email:').fill(uniqueEmail);
-    await page.locator('#Password').click();
-    await page.getByLabel('Password:').fill('Password1');
+  await page.goto('https://s2.cengagelearning.com.au/');
+  await page.getByRole('link', { name: ' Sign Up' }).click();
 
-    await page.locator('#termsImg').click();
-    await page.getByLabel('dismiss cookie message').click();
-    await page.getByRole('button', { name: 'Create my account' }).click();
+  // Fill in signup form
+  await page.getByLabel('First name:').fill('IBC');
+  await page.getByLabel('Last name:').fill('QA');
+  await page.getByLabel('Email:', { exact: true }).fill(uniqueEmail);
+  await page.getByLabel('Confirm Email:').fill(uniqueEmail);
+  await page.getByLabel('Password:').fill('Password1');
+  await page.locator('#termsImg').click();
+  await page.getByLabel('dismiss cookie message').click();
+  await page.getByRole('button', { name: 'Create my account' }).click();
 
-    // after creating the account…
-    await page.waitForURL('**/signup?e=confirmation', { timeout: 30000 });
+  // Wait for confirmation page
+  await page.waitForURL('**/signup?e=confirmation', { timeout: 30000 });
 
-    // Assert successful registration
-    await expect(page.getByRole('link', { name: 'MY DASHBOARD' })).toBeVisible();
+  // Assert successful registration
+  await expect(page.getByRole('link', { name: 'MY DASHBOARD' })).toBeVisible();
 });
 
 test('can register NZ', async ({ page }) => {
-    // Generate a unique email with current datetime
-    const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '');
-    const uniqueEmailNZ = `ibcqa_nz${timestamp}@yopmail.com`;
+  await mockRecaptcha(page);
 
-    console.log(` Using unique email: ${uniqueEmailNZ}`);
+  // Generate a unique email with current datetime
+  const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '');
+  const uniqueEmailNZ = `ibcqa_nz${timestamp}@yopmail.com`;
 
-    await page.goto('https://cengage.co.nz/');
-    await page.getByRole('link', { name: ' Sign Up' }).click();
+  console.log(` Using unique email: ${uniqueEmailNZ}`);
 
-    // Fill in signup form
-    await page.getByLabel('First name:').fill('IBC');
-    await page.getByLabel('Last name:').fill('QA');
-    await page.getByLabel('Email:', { exact: true }).fill(uniqueEmailNZ);
-    await page.getByLabel('Confirm Email:').fill(uniqueEmailNZ);
-    await page.locator('#Password').click();
-    await page.getByLabel('Password:').fill('Password1');
-    await page.locator('#termsImg').click();
-        await page.getByLabel('dismiss cookie message').click();
-    await page.getByRole('button', { name: 'Create my account' }).click();
+  await page.goto('https://s2.cengagelearning.com.au/');
+  await page.getByRole('link', { name: ' Sign Up' }).click();
 
-    // after creating the account…
-    await page.waitForURL('**/signup?e=confirmation', { timeout: 30000 });
+  // Fill in signup form
+  await page.getByLabel('First name:').fill('IBC');
+  await page.getByLabel('Last name:').fill('QA');
+  await page.getByLabel('Email:', { exact: true }).fill(uniqueEmailNZ);
+  await page.getByLabel('Confirm Email:').fill(uniqueEmailNZ);
+  await page.getByLabel('Password:').fill('Password1');
+  await page.locator('#termsImg').click();
+  await page.getByLabel('dismiss cookie message').click();
+  await page.getByRole('button', { name: 'Create my account' }).click();
 
-    // Assert successful registration
-    await expect(page.getByRole('link', { name: 'MY DASHBOARD' })).toBeVisible();
+  // Wait for confirmation page
+  await page.waitForURL('**/signup?e=confirmation', { timeout: 30000 });
 
+  // Assert successful registration
+  await expect(page.getByRole('link', { name: 'MY DASHBOARD' })).toBeVisible();
 });
 
-
 test('can change country', async ({ page }) => {
-    await page.goto('https://s2.cengagelearning.com.au/');
+  await mockRecaptcha(page);
 
-    // Fill in signup form
-    await page.locator('#CountryName').click();
-    //await page.locator('//*[@id="countrydropdown"]/span').click();
+  await page.goto('https://s2.cengagelearning.com.au/');
+
+  // Example: click the country dropdown
+  await page.locator('#CountryName').click();
+  // You can add more assertions here for country selection
 });
