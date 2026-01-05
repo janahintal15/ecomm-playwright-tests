@@ -7,22 +7,26 @@ export class CartPage {
   readonly searchButton: Locator;
   readonly addToCartButtons: Locator;
   readonly cartLink: Locator;
-  readonly lineItemTotals: Locator;
+  readonly lineTotals: Locator;
   readonly shippingLabel: Locator;
   readonly cartTotalFooter: Locator;
+  readonly clearCartBtn: Locator;
+  readonly confirmClearBtn: Locator;
 
   constructor(page: Page) {
     this.page = page;
 
-    // Unique + stable
     this.primaryMenu = page.locator('#dnn_CENGAGESUBMENU_PrimaryLink');
-
     this.searchButton = page.locator('#nondiv-searchbtn');
     this.addToCartButtons = page.locator('button[id^="AddToCartBtn"]');
-    this.cartLink = page.getByRole('link', { name: /My Cart/i });
-    this.lineItemTotals = page.locator('.PriceComputed.line-total');
+    this.cartLink = page.locator('#cartlnk');
+
+    this.lineTotals = page.locator('.PriceComputed.line-total');
     this.shippingLabel = page.locator('#ShippingCostLabel');
     this.cartTotalFooter = page.locator('#CartTotalLabelFooter');
+
+    this.clearCartBtn = page.locator('#linkDelete').first();
+    this.confirmClearBtn = page.locator('#btnClearCartConfirm');
   }
 
   async goto(url: string) {
@@ -35,63 +39,50 @@ export class CartPage {
 
   async triggerSearch() {
     await this.searchButton.click();
-
-    // Wait for results to load (replaces networkidle)
-    await this.addToCartButtons.first().waitFor({ timeout: 15000 });
+    await expect(this.addToCartButtons.first()).toBeVisible({ timeout: 15000 });
   }
 
-  async addFirstItems(count: number = 3) {
-    const total = await this.addToCartButtons.count();
-    const limit = Math.min(count, total);
+  async addFirstItems(count = 3) {
+    const limit = Math.min(count, await this.addToCartButtons.count());
 
     for (let i = 0; i < limit; i++) {
       const btn = this.addToCartButtons.nth(i);
-
       await btn.scrollIntoViewIfNeeded();
       await btn.click();
-
-      // tiny buffer for UI changes (SAFE!)
-      await this.page.waitForTimeout(400);
+      await this.page.waitForTimeout(300); // UI settle
     }
   }
 
   async goToCart() {
     await this.cartLink.click();
-    await this.page.waitForURL('**/list/item/cart', { timeout: 15000 });
-  }
-
-  async calculateSubtotal() {
-    await expect(this.lineItemTotals.first()).toBeVisible({ timeout: 10000 });
-
-    const prices = await this.lineItemTotals.allInnerTexts();
-    return prices.reduce(
-      (acc, price) => acc + parseFloat(price.replace(/[^0-9.]/g, '')),
-      0
-    );
-  }
-
-  async getShipping(subtotal: number) {
-    if (subtotal < 200) {
-      const txt = await this.shippingLabel.innerText();
-      return parseFloat(txt.replace(/[^0-9.]/g, ''));
-    }
-    return 0;
-  }
-
-  async getDisplayedTotal() {
-    const txt = await this.cartTotalFooter.innerText();
-    return parseFloat(txt.replace(/[^0-9.]/g, ''));
+    await this.page.waitForURL(/\/list\/item\/cart/, { timeout: 15000 });
   }
 
   async verifyTotal() {
-   await expect(this.cartTotalFooter).toBeVisible({ timeout: 15000 });
+    await expect(this.cartTotalFooter).toBeVisible();
 
-    const subtotal = await this.calculateSubtotal();
-    const shipping = await this.getShipping(subtotal);
+    const prices = await this.lineTotals.allInnerTexts();
+    const subtotal = prices.reduce(
+      (sum, p) => sum + Number(p.replace(/[^0-9.]/g, '')),
+      0
+    );
 
-    const expected = (subtotal + shipping).toFixed(2);
-    const displayed = (await this.getDisplayedTotal()).toFixed(2);
+    const shipping =
+      subtotal >= 200
+        ? 0
+        : Number((await this.shippingLabel.innerText()).replace(/[^0-9.]/g, ''));
 
-    expect(displayed).toBe(expected);
+    const displayed = Number(
+      (await this.cartTotalFooter.innerText()).replace(/[^0-9.]/g, '')
+    );
+
+    expect(displayed).toBeCloseTo(subtotal + shipping, 2);
+  }
+
+  async clearCart() {
+    await this.cartLink.click();
+    await this.clearCartBtn.waitFor({state:'visible', timeout:10_000});
+    await this.clearCartBtn.click();
+    await this.confirmClearBtn.click();
   }
 }

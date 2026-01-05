@@ -54,7 +54,7 @@ test.describe('ECOMM Login Flow', () => {
     await page.getByText('Log in').click();
     await loginPage.login('invalid@test.com', password);
     await page.getByText('This page requires frames in').contentFrame().getByRole('button', { name: 'Log in' }).click();
-    await expect(page.locator('#ErrorWarningMessage')).toBeVisible;
+    await expect(page.locator('#ErrorWarningMessage')).toBeVisible();
   });
 });
 

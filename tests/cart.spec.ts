@@ -1,16 +1,20 @@
 import { test, expect } from '@playwright/test';
 import { CartPage } from '../pages/CartPage';
 import { LoginPage } from '../pages/LoginPage';
+import { getBaseUrl, getCredentials } from '../utils/env';
+
+
+const ENV = 'PROD';
 
 test.describe('CART Tests', () => {
 
   test('AU - Add to Cart and Verify Total', async ({ page }) => {
     const cart = new CartPage(page);
 
-    await cart.goto('https://cengage.com.au/');
+    await cart.goto(getBaseUrl(ENV, 'AU'));
     await cart.openPrimaryCategory();
     await cart.triggerSearch();
-    await cart.addFirstItems(3);
+    await cart.addFirstItems();
     await cart.goToCart();
     await cart.verifyTotal();
   });
@@ -18,54 +22,90 @@ test.describe('CART Tests', () => {
   test('NZ - Add to Cart and Verify Total', async ({ page }) => {
     const cart = new CartPage(page);
 
-    await cart.goto('https://cengage.co.nz/');
+    await cart.goto(getBaseUrl(ENV, 'NZ'));
     await cart.openPrimaryCategory();
     await cart.triggerSearch();
-    await cart.addFirstItems(3);
+    await cart.addFirstItems();
     await cart.goToCart();
     await cart.verifyTotal();
   });
 
-  test('AU - Add and Remove to List', async ({ page }) => {
-    const login = new LoginPage(page);
-    const cart = new CartPage(page);
+test('AU- Add and Remove from List', async ({ page }, testInfo) => {
+  const ENV = testInfo.project.name as 'S2' | 'PROD';
 
-    // LOGIN
-    await login.goto('https://cengage.com.au/');
-    await login.acceptCookies();
-    await login.clickLogin();
-    await login.login(
-      process.env.PROD_EMAIL!,
-      process.env.PROD_PASSWORD!
+  const login = new LoginPage(page);
+  const cart = new CartPage(page);
+
+  const creds = getCredentials(ENV, 'AU');
+  const baseUrl = getBaseUrl(ENV, 'AU');
+
+  await login.goto(baseUrl);
+  await login.acceptCookies();
+  await login.clickLogin();
+  await login.login(creds.email, creds.password);
+  await login.assertLoginSuccess();
+
+  await cart.goto(baseUrl);
+  await cart.openPrimaryCategory();
+  await cart.triggerSearch();
+  await cart.addFirstItems();
+  await cart.goToCart();
+
+  await page.locator('.row.cart-item').first().click();
+  await page.getByRole('button', { name: 'Add to List' }).first().click();
+  await page.getByRole('link', { name: 'Shopping List' }).click();
+
+  await page.getByRole('link', { name: 'My Lists' }).first().click();
+ await expect(page).toHaveURL(
+      /\/list(\?listname=.*)?$/i
     );
-    await login.assertLoginSuccess();
 
-    // ADD ITEMS TO CART
-    await cart.goto('https://cengage.com.au/');
-    await cart.openPrimaryCategory();
-    await cart.triggerSearch();
-    await cart.addFirstItems(3);
-    await cart.goToCart();
+  await cart.clearCart();
+  // Assert cart page
+  await expect(page).toHaveURL(/\/list\/item\/cart$/i);
 
-    // ADD FIRST ITEM TO LIST
-    await page.locator('.row.cart-item').first().click();
-    await page.getByRole('button', { name: 'Add to List' }).first().click();
-    await page.getByRole('link', { name: 'Shopping List' }).click();
+  // Assert cart count is zero
+  await expect(page.locator('#Cart')).toHaveText('0');
 
-    // VERIFY IN LIST
-    await page.getByRole('link', { name: 'My Lists' }).first().click();
+  });
 
-    const shoppingListRow = page.locator('.ListTblRow', {
-      has: page.locator('.listnamegridlabel', { hasText: 'Shopping List' }),
-    });
+  test('NZ - Add and Remove from List', async ({ page }, testInfo) => {
+  const ENV = testInfo.project.name as 'S2' | 'PROD';
 
-    await shoppingListRow.getByRole('link', { name: 'Open' }).click();
-    await expect(page).toHaveURL(/\/list\?listname/i);
+  const login = new LoginPage(page);
+  const cart = new CartPage(page);
 
-    // CLEAR AND RESET CART
-    await page.locator('#cartlnk').click();
-    await page.locator('#linkDelete').first().click();
-    await page.locator('#btnClearCartConfirm').click();
+  const creds = getCredentials(ENV, 'NZ');
+  const baseUrl = getBaseUrl(ENV, 'NZ');
+
+  await login.goto(baseUrl);
+  await login.acceptCookies();
+  await login.clickLogin();
+  await login.login(creds.email, creds.password);
+  await login.assertLoginSuccess();
+
+  await cart.goto(baseUrl);
+  await cart.openPrimaryCategory();
+  await cart.triggerSearch();
+  await cart.addFirstItems();
+  await cart.goToCart();
+
+  await page.locator('.row.cart-item').first().click();
+  await page.getByRole('button', { name: 'Add to List' }).first().click();
+  await page.getByRole('link', { name: 'Shopping List' }).click();
+
+  await page.getByRole('link', { name: 'My Lists' }).first().click();
+ await expect(page).toHaveURL(
+      /\/list(\?listname=.*)?$/i
+    );
+
+  await cart.clearCart();
+  // Assert cart page
+  await expect(page).toHaveURL(/\/list\/item\/cart$/i);
+
+  // Assert cart count is zero
+  await expect(page.locator('#Cart')).toHaveText('0');
+
   });
 
 });
