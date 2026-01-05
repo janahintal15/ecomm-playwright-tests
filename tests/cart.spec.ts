@@ -109,3 +109,41 @@ test('AU- Add and Remove from List', async ({ page }, testInfo) => {
   });
 
 });
+
+test.describe('CART CHECKOUT tests', () => {
+  test('AU - B2B CHECKOUT PAYON ACCOUNT', async ({ page }, testInfo) => {
+  const ENV = testInfo.project.name as 'S2' | 'PROD';
+
+  const login = new LoginPage(page);
+  const cart = new CartPage(page);
+
+  const creds = getCredentials(ENV, 'AU');
+  const baseUrl = getBaseUrl(ENV, 'AU');
+
+  await login.goto(baseUrl);
+  await login.acceptCookies();
+  await login.clickLogin();
+  await login.login(creds.email, creds.password);
+  await login.assertLoginSuccess();
+
+  await cart.goto(baseUrl);
+  await cart.openPrimaryCategory();
+  await cart.triggerSearch();
+  await cart.addFirstItems();
+  await cart.goToCart();
+  await expect(page.locator('#dnn_ctr1322_View_ctl00_btnCheckout')).toBeVisible();
+  await page.locator('#dnn_ctr1322_View_ctl00_btnCheckout').click(),
+
+  await expect(page).toHaveURL(/\/checkout$/i, { timeout: 20000 }); 
+  await page.locator('#chkIagree').click();
+  await expect(page.locator('#btnPayOnInvoice')).toBeVisible();
+  await page.getByRole('button', { name: 'Pay on Invoice' }).click();
+
+  await expect(page).toHaveURL(/\/Checkout\?value=success$/i);
+  await expect(page.locator('#OrderNumber')).toBeVisible()
+
+
+
+  });
+
+});
