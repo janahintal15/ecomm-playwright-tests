@@ -140,44 +140,6 @@ ENV=PROD
       archiveArtifacts artifacts: "test-results/**/*, ${HTML_DIR}/**/*, ${JUNIT_FILE}", allowEmptyArchive: true
     }
 
-    success {
-      script {
-        if (params.TEST_ENV == 'PROD') {
-          emailext(
-            to: "${env.RECIPIENTS}",
-            subject: "ECOMM Playwright SUCCESS #${env.BUILD_NUMBER}",
-            mimeType: 'text/html',
-            body: """
-              <p><b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> completed successfully.</p>
-              <p>Build: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-              <p>Open <b>Playwright HTML Report</b> on the build page for details.</p>
-            """
-          )
-        }
-      }
-    }
-
-    unstable {
-      script {
-        if (params.TEST_ENV == 'PROD') {
-          emailext(
-            to: "${env.RECIPIENTS}",
-            subject: "ECOMM Playwright UNSTABLE #${env.BUILD_NUMBER}",
-            mimeType: 'text/html',
-            attachmentsPattern: "${JUNIT_FILE}",
-            body: """
-              <p><b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> is UNSTABLE (some tests failed).</p>
-              <p>Build: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
-              <ul>
-                <li>JUnit XML attached</li>
-                <li>Click <b>Playwright HTML Report</b> on the build page for screenshots/videos/traces</li>
-              </ul>
-            """
-          )
-        }
-      }
-    }
-
     failure {
       script {
         if (params.TEST_ENV == 'PROD') {

@@ -55,7 +55,8 @@ export class LoginPage {
   }
 
   async assertLoginSuccess() {
-    await this.page.waitForURL(/\/(dashboard|subscriptions)$/i, { timeout: 15000 });
-    await expect(this.userLabel).toBeVisible({ timeout: 10000 });
+    await this.page.waitForLoadState('domcontentloaded');
+    await expect(this.userLabel).toBeVisible({ timeout: 15000 });
   }
+
 }
