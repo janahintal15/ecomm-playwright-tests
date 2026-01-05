@@ -1,6 +1,6 @@
-<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="38.9905">
-<testsuite name="login.spec.ts" timestamp="2025-09-18T17:09:00.916Z" hostname="S2" tests="1" failures="0" skipped="0" time="27.719" errors="0">
-<testcase name="ECOMM Login Flow › can login successfully" classname="login.spec.ts" time="27.719">
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="71.36257599999989">
+<testsuite name="cart.spec.ts" timestamp="2026-01-05T11:22:48.428Z" hostname="S2" tests="1" failures="0" skipped="0" time="57.677" errors="0">
+<testcase name="CART Tests › AU - Add to List" classname="cart.spec.ts" time="57.677">
 </testcase>
 </testsuite>
 </testsuites>
