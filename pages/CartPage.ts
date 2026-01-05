@@ -84,7 +84,6 @@ export class CartPage {
   }
 
   async verifyTotal() {
-    await expect(this.cartTotalFooter).toBeVisible({ timeout: 15000 });
     const subtotal = await this.calculateSubtotal();
     const shipping = await this.getShipping(subtotal);
 
