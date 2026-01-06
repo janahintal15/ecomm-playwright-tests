@@ -82,31 +82,50 @@ pipeline {
       }
     }
 
-    stage('Create .env for selected env') {
-      steps {
-        script {
-          if (params.TEST_ENV == 'S2') {
-            withCredentials([usernamePassword(credentialsId: 'ecom-s2-creds', usernameVariable: 'U', passwordVariable: 'P')]) {
-              writeFile file: '.env', text: """S2_BASE_URL=https://s2.cengagelearning.com.au
-PROD_BASE_URL=https://www.cengage.com.au
-S2_EMAIL=${U}
-S2_PASSWORD=${P}
-ENV=S2
-"""
-            }
-          } else {
-            withCredentials([usernamePassword(credentialsId: 'ecom-prod-creds', usernameVariable: 'U', passwordVariable: 'P')]) {
-              writeFile file: '.env', text: """S2_BASE_URL=https://s2.cengagelearning.com.au
-PROD_BASE_URL=https://www.cengage.com.au
-PROD_EMAIL=${U}
-PROD_PASSWORD=${P}
-ENV=PROD
-"""
-            }
+  stage('Create .env for selected env') {
+    steps {
+      script {
+        if (params.TEST_ENV == 'S2') {
+          withCredentials([
+            usernamePassword(credentialsId: 'ecom-s2-creds', usernameVariable: 'AU_U', passwordVariable: 'AU_P'),
+            usernamePassword(credentialsId: 'ecom-s2-creds', usernameVariable: 'NZ_U', passwordVariable: 'NZ_P')
+          ]) {
+            writeFile file: '.env', text: """\
+  S2_BASE_URL=https://s2.cengagelearning.com.au
+  S2_BASE_URL_NZ=https://s2.cengagelearning.co.nz
+
+  S2_EMAIL=${AU_U}
+  S2_PASSWORD=${AU_P}
+
+  S2_EMAIL_NZ=${NZ_U}
+  S2_PASSWORD_NZ=${NZ_P}
+
+  ENV=S2
+  """
+          }
+        } else {
+          withCredentials([
+            usernamePassword(credentialsId: 'ecom-prod-creds', usernameVariable: 'AU_U', passwordVariable: 'AU_P'),
+            usernamePassword(credentialsId: 'ecom-prod-creds', usernameVariable: 'NZ_U', passwordVariable: 'NZ_P')
+          ]) {
+            writeFile file: '.env', text: """\
+  PROD_BASE_URL=https://www.cengage.com.au
+  PROD_BASE_URL_NZ=https://www.cengage.co.nz
+
+  PROD_EMAIL=${AU_U}
+  PROD_PASSWORD=${AU_P}
+
+  PROD_EMAIL_NZ=${NZ_U}
+  PROD_PASSWORD_NZ=${NZ_P}
+
+  ENV=PROD
+  """
           }
         }
       }
     }
+  }
+
 
     stage('Run Playwright') {
       steps {
